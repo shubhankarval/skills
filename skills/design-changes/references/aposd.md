@@ -2,8 +2,6 @@
 
 Concepts from _A Philosophy of Software Design_ (John Ousterhout). The skill cites these by ID (e.g. `C2`, `D1`, `R3`) instead of re-explaining them.
 
----
-
 ## Complexity
 
 Complexity is anything about the structure of a system that makes it hard to understand or modify. It accumulates in small increments, so every change either pays it down or adds to it.
@@ -25,20 +23,18 @@ Complexity is anything about the structure of a system that makes it hard to und
 | :-- | :------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | D1  | Deep modules                           | Best modules give a lot of functionality behind a simple interface. Interface cost must be small relative to what it hides.                                                                      |
 | D2  | Information hiding                     | Each module encapsulates design decisions (formats, algorithms, protocols). Leakage is when one decision is reflected in several modules.                                                        |
-| D3  | Avoid temporal decomposition           | Structure by the knowledge each module needs, not by the order operations run (e.g., read + parse + write as separate modules often leak the same format).                                       |
+| D3  | Avoid temporal decomposition           | Structure by the knowledge each module needs, not by the order operations run (read → parse → write as separate modules often leak the same format).                                             |
 | D4  | Somewhat general-purpose               | Interface general enough to serve current and near-future needs without special cases; implementation tuned to today's use. Ask: "What is the simplest interface that covers all current needs?" |
 | D5  | Different layer, different abstraction | Adjacent layers should offer different abstractions. Pass-through methods and pass-through variables signal a layer adds nothing.                                                                |
 | D6  | Pull complexity downwards              | It is better for a module's implementation to absorb complexity than to push it to every caller (via config knobs, exceptions, or required call sequences).                                      |
 | D7  | Better together or better apart        | Combine code that shares information, simplifies the interface, or removes duplication. Separate general-purpose from special-purpose code.                                                      |
 | D8  | Define errors out of existence         | Redefine semantics so error cases disappear; otherwise mask them low, aggregate them in one handler, or crash on truly unrecoverable ones.                                                       |
 | D9  | Design it twice                        | Consider radically different designs before committing; the first idea is rarely the best.                                                                                                       |
-| D10 | Comments describe what code cannot     | Interface comments state abstractions and contracts; implementation comments state why. Writing comments first exposes poor abstractions early.                                                  |
+| D10 | Comments describe what code cannot     | Interface comments state abstractions and contracts; implementation comments state _why_. Comments first exposes poor abstractions early.                                                        |
 | D11 | Precise names                          | A name should create a clear, specific image. Hard-to-name things often have muddled responsibilities.                                                                                           |
 | D12 | Consistency                            | Similar things done in similar ways lower cognitive load.                                                                                                                                        |
 | D13 | Obvious code                           | A reader can understand behaviour quickly without deep study. Event-driven control flow, generic containers, and mismatched types/declarations hurt obviousness.                                 |
 | D14 | Strategic programming                  | Optimise for long-term structure, investing a modest ongoing fraction of effort, rather than tactical "just make it work" patches.                                                               |
-
----
 
 ## Red Flags
 
