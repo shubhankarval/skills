@@ -1,6 +1,6 @@
 ---
 name: design-changes
-description: Interactive architecture review grounded in "A Philosophy of Software Design" (APOSD). Interviews the user about requirements and design preferences, then proposes at most 6 high-impact design changes that reduce complexity so the code is easier for humans and AI agents to understand and modify. Each change is designed twice with a recommendation and illustrative code. Use when the user asks to design code changes, improve architecture, reduce complexity, or runs /design-changes.
+description: Interactive architecture review grounded in "A Philosophy of Software Design" (APOSD). Interviews the user about requirements, constraints, and context the code cannot show, then proposes at most 6 high-impact design changes that reduce complexity so the code is easier for humans and AI agents to understand and modify. Each change is designed twice with a recommendation and illustrative code. Use when the user asks to design code changes, improve architecture, reduce complexity, or runs /design-changes.
 argument-hint: "[path, module, or feature to review]"
 disable-model-invocation: true
 ---
@@ -18,7 +18,7 @@ These apply to every phase.
 1. **Read-only.** Do not modify code unless the user asks for implementation after the report.
 2. **Evidence.** Every finding cites `path:line`. No finding without evidence.
 3. **Cite, don't re-teach.** Refer to concepts by ID plus at most one clause; never paste definitions from the reference.
-4. **Questions are for inputs, not decisions.** Ask about requirements, constraints, and preferences. Never ask the user to pick a design, an alternative or whether to make a specific change — choosing designs is this skill's job.
+4. **Questions are for inputs, not decisions.** Ask about requirements, constraints, and facts the code cannot show. Never ask the user to pick a design, an alternative or whether to make a specific change, or to choose between options APOSD already decides — choosing designs is this skill's job.
 5. **Say it once.** Each fact, snippet, and rationale appears once in the report. Later mentions point to it by label (e.g., "see S2.0", "per P3").
 6. **At most 6 changes.** Fewer is better than padding. Rank by impact.
 
@@ -40,33 +40,36 @@ Explore the scoped code before asking anything, so questions are specific to thi
 
 ### Phase 3 — Interview
 
-Ask 1-2 rounds of at most 5 questions each. Use a structured question tool if available; otherwise a single numbered message. Prefer multiple choice with free form allowed, and mark a sensible default inferred from the survey. Pick the most relevant questions from the bank below and phrase them using real names from this codebase.
+Ask one round of at most 15 questions. Ask only what the survey could not answer and what would change the ranking or designs; fewer is better - the cap is a limit, not a target. Ask a second round of at most 5 questions only if first-round answers open a gap that blocks Phase 4. Use a structured question tool if available; otherwise a single numbered message. Ask constraint, convention, and design-freedom questions as multiple choice with free form allowed, marking a sensible default inferred from the survey. Ask pain, surprise, and upcoming-work questions as open free text with no default.
 
-| Category           | What to learn                                                                                                              |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| Goals & pain       | Which changes feel slow or risky today; which areas will change in the next 6-12 months (drives `C1` weighting).           |
-| Constraints        | Public APIs/contracts that must stay stable; performance budgets; fixed frameworks or platforms; test coverage confidence. |
-| Migration appetite | Incremental refactors only, or larger restructures acceptable; how much effort to invest (`D14`).                          |
-| Module style       | Fewer deeper modules vs. many small single-purpose units; tolerance for indirection and layers.                            |
-| Generality         | Prefer general-purpose mechanisms or explicit special-case code (`D4`).                                                    |
-| Error handling     | Exceptions vs. result types; appetite for redefining semantics to remove error cases (`D8`).                               |
-| Conventions        | Naming, comments, and existing patterns to keep consistent with vs. replace (`D10`-`D12`).                                 |
-| Agent usage        | Whether AI agents work in this code and on which kinds of tasks.                                                           |
+Pick the most relevant categories from the bank below and write concrete questions using real names from this codebase.
 
-**Translate decisions into preferences.** If you are tempted to ask about a specific change, ask about the underlying preference instead:
+| Category            | What to learn                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| :------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pain & surprises    | Which changes feel slow or risky; what broke unexpectedly after a change; what you must remember when touching it; which areas you distrust despite tests (`C2`, `C3`)                                                                                                                                                                                                                                                                       |
+| Upcoming work scope | Concrete features or variations expected in the next 6-12 months (drives Frequency and `D4` platforms)                                                                                                                                                                                                                                                                                                                                       |
+| Constraints         | Public APIs and error behaviours other systems rely on (these block `D8`); performance budgets; fixed frameworks or platforms                                                                                                                                                                                                                                                                                                                |
+| Migration appetite  | Incremental refactors only, or larger restructures acceptable; how much effort to invest (`D14`)                                                                                                                                                                                                                                                                                                                                             |
+| Design freedom      | Which current choices (libraries, patterns, paradigms, module boundaries - name them from the survey) are mandated vs. team standard vs. historical/incidental; which new approaches are admissible (new dependencies, different paradigms, adopting or dropping a library/framework, changing code owned by other teams); tolerance for techniques the team hasn't used. Build options from survey findings; never ask which design to pick |
+| Conventions         | Rules mandated by lint, ADRs, org guidelines, or frameworks; error-reporting style (exceptions vs. result types) when the survey finds a mix (`D12`)                                                                                                                                                                                                                                                                                         |
+| Survey checks       | Confirm or refute specific hypotheses from the survey: dead code, intentional duplication, deliberate module splits                                                                                                                                                                                                                                                                                                                          |
+| Out of scope        | Code being rewritten, deprecated, or already slated for refactor                                                                                                                                                                                                                                                                                                                                                                             |
 
-| Don't ask                                               | Ask instead                                                                          |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| "Should I merge `OrderService` into `OrderRepository`?" | "Do you prefer fewer modules with small interfaces, or many single-purpose classes?" |
-| "Option A (result types) or option B (exceptions)?"     | "How should expected failures be reported to callers in this codebase?"              |
+**Translate decisions into facts.** If you are tempted to ask about a specific change, ask about the fact that would decide it instead:
 
-Record answers as a numbered **Preference Profile** (`P1`, `P2`, …). Unanswered items take the stated default and are marked "(default)".
+| Don't ask                                                                | Ask instead                                                                                                            |
+| :----------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| "Should I merge `OrderService` into `OrderRepository`?"                  | "Is the `OrderService`/`OrderRepository` split required by a framework or team rule?"                                  |
+| "Option A (result types) or option B (exceptions)?"                      | "Do other services depend on the exceptions `OrderService` throws today?"                                              |
+| "Should we replace the `BaseHandler` inheritance tree with composition?" | "Is `BaseHandler` inheritance mandated, a team standard, or historical? Which alternative paradigms would you accept?" |
+
+Record answers as a numbered **Context Profile** (`P1`, `P2`, …), tagging each item **[hard]** (a constraint no design may violate) or **[context]**. Record mandated design choices and inadmissible approaches as **[hard]**. Record incidental or historical choices as **[context]** and note that they may be removed. Unanswered items with a default take it and are marked "(default)"; unanswered items without a default are omitted.
 
 ### Phase 4 — Diagnose and rank
 
 1. For each candidate finding, record: symptoms (`C*`), cause (`K*`), red flags (`R*`), evidence.
 2. Group findings that share a root cause into one change; fix the cause, not each symptom.
-3. Drop changes that violate a hard constraint from the Preference Profile.
+3. Drop changes that violate a **[hard]** item from the Context Profile, require an approach the user marked inadmissible, target out-of-scope code, or rest on a survey hypothesis the user refuted.
 4. Score each change: **Impact = Reach × Frequency × Severity**, each 1-3.
    - Reach: how many modules/files the problem touches.
    - Frequency: how often that code changes (churn + upcoming work from the interview).
@@ -78,20 +81,18 @@ Record answers as a numbered **Preference Profile** (`P1`, `P2`, …). Unanswere
 
 For each selected change, apply `D9`:
 
-1. Produce 2-3 alternatives that differ fundamentally — different module boundaries or interface shapes, not parameter tweaks. At least one should be a bold option.
+1. Produce 2-3 alternatives that differ fundamentally - different module boundaries or interface shapes, not parameter tweaks. At least one should be a bold option that uses the widest design freedom the user granted (`P*`); if it goes beyond that freedom, label it "stretch" in the Designs table and never recommend it.
 2. Evaluate every alternative on these **criteria**:
    - Interface simplicity / depth (`D1`)
    - Information hiding (`D2`)
    - Complexity removed (`C1`-`C3`)
-   - Fit to Preference Profile
+   - Respect constraints and conventions (`P*`)
    - Migration cost and risk
-3. Recommend one. The rationale cites criteria and `P*` IDs. If it goes against a stated preference, say why in one sentence.
+3. Recommend one. The rationale cites criteria and `P*` IDs.
 
 ### Phase 6 — Report
 
 Produce the report using the template below, then offer next steps in one line: implement a change, deep-dive one, or re-rank with new constraints.
-
----
 
 ## Report template
 
@@ -104,9 +105,9 @@ Produce the report using the template below, then offer next steps in one line: 
 | --- | ------------------ | -------- | ------ | ---- | ----------- |
 | 1   | <imperative title> | R2, D2   | 18     | M    | B: <name>   |
 
-## Preference Profile
+## Context Profile
 
-- P1: <preference>
+- P1 [hard]: <constraint or context>
 
 ## Change 1: <imperative title>
 
@@ -120,11 +121,11 @@ Produce the report using the template below, then offer next steps in one line: 
 
 **Designs**
 
-|  | A: <name> | B: <name> |
-| --- | --- | --- |
-| Idea | <one line> | <one line> |
-| Interface | `<signature-level sketch>` | `<signature-level sketch>` |
-| <one row per Phase 5 criterion> | ✓ / ~ / ✗ + ≤8 words | … |
+|                                 | A: <name>                  | B: <name>                  |
+| ------------------------------- | -------------------------- | -------------------------- |
+| Idea                            | <one line>                 | <one line>                 |
+| Interface                       | `<signature-level sketch>` | `<signature-level sketch>` |
+| <one row per Phase 5 criterion> | ✓ / ~ / ✗ + ≤8 words       | …                          |
 
 **Recommended: B** - <rationale citing criteria and P-ids; do not restate the Problem.>
 
